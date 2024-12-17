@@ -2,16 +2,9 @@ trigger:
 - main
 
 variables:
-  # GHCR details
-  githubRegistry: 'ghcr.io'             # GitHub Container Registry
-  githubOwner: 'your-github-username'   # Replace with your GitHub username or org
+  githubRegistry: 'ghcr.io'
   imageName: 'nodejs-app'
   imageTag: 'latest'
-  githubPAT: $(GITHUB_PAT)              # Personal Access Token stored as a pipeline secret
-
-  # AKS details
-  aksClusterName: 'myAKSCluster'        # AKS cluster name
-  resourceGroup: 'myResourceGroup'      # Resource Group for AKS
 
 stages:
 - stage: Build_and_Push_Image
@@ -26,44 +19,19 @@ stages:
       displayName: 'Login to GitHub Container Registry'
       inputs:
         command: login
-        containerRegistry: '$(githubRegistry)'
-        username: '$(githubOwner)'
-        password: '$(githubPAT)'
+        containerRegistry: 'GitHub_Container_Registry_Access'  # Reference your Service Connection here
 
     - task: Docker@2
       displayName: 'Build Docker Image'
       inputs:
         command: build
         Dockerfile: '**/Dockerfile'
-        repository: $(githubRegistry)/$(githubOwner)/$(imageName)
+        repository: $(githubRegistry)/<your-username>/$(imageName)
         tags: $(imageTag)
 
     - task: Docker@2
       displayName: 'Push Docker Image to GHCR'
       inputs:
         command: push
-        repository: $(githubRegistry)/$(githubOwner)/$(imageName)
+        repository: $(githubRegistry)/<your-username>/$(imageName)
         tags: $(imageTag)
-
-- stage: Deploy_to_AKS
-  displayName: 'Deploy to AKS'
-  dependsOn: Build_and_Push_Image
-  jobs:
-  - job: Deploy
-    displayName: 'Deploy Application to AKS'
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    - task: AzureCLI@2
-      displayName: 'Login to AKS'
-      inputs:
-        azureSubscription: 'myAzureServiceConnection'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          az aks get-credentials --resource-group $(resourceGroup) --name $(aksClusterName)
-
-    - script: |
-        echo "Creating Kubernetes deployment..."
-        kubectl apply -f k8s-deployment.yml
-      displayName: 'Deploy Application to AKS'
