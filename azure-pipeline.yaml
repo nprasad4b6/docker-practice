@@ -6,6 +6,7 @@ variables:
   imageName: 'nodejs-app'
   imageTag: 'latest'
   your-username: 'nprasad4b6'
+  repository: 'nprasad4b6/docker-practice/docker-practice'
 
 stages:
 - stage: Build_and_Push_Image
@@ -27,12 +28,12 @@ stages:
       inputs:
         command: build
         Dockerfile: '**/Dockerfile'
-        repository: $(githubRegistry)/$(your-username)/$(imageName)
+        repository: $(repository)
         tags: $(imageTag)
 
     - task: Docker@2
       displayName: 'Push Docker Image to GHCR'
       inputs:
         command: push
-        repository: $(githubRegistry)/$(your-username)/$(imageName)
+        repository: $(repository)
         tags: $(imageTag)
